@@ -2,7 +2,7 @@
 A simple web application designed to retrieve the user's location and output the weather and future forecasts in their area using the National Weather Service (NWS) API. 
 ## Features
 - Detects and displays user location
-- Outputs location and the weather in the area
+- Outputs current weather in the area
 - Displays weather forecasts up to 10 days in the future
 - Renders raw JSON data onto the webpage
 ## Installation
