@@ -8,7 +8,7 @@ A simple web application designed to retrieve the user's location and output the
 ## Installation
 1. Clone the repository
 2. Open project folder 
-3. Run weather.html in a browser or local server.
+3. Run index.html in a browser or local server.
 ## Usage 
 With user input, the application fetches and displays weather data with the user's current location. 
 The National Weather Service API is used, displaying JSON onto the HTML page. 
