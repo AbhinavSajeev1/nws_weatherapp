@@ -1,114 +1,107 @@
-let count = 0; 
-let globalurl = ""
-let globalData = null; 
+let count = 0;
+let globalData = null;
 let globalLocation = null;
-let savedPosition = null; 
+let savedPosition = null;
 
-window.onload = function() { 
-    document.getElementById('button').onclick = function() {
-    getLocation(); 
+const button = document.getElementById("button");
+const weatherWrapper = document.getElementById("weather-wrapper");
+const previousButton = document.getElementById("last_button");
+const nextButton = document.getElementById("next_button");
 
-    if (!document.getElementById("weather-container")) {
-        const weatherBox = document.createElement('div');
-        weatherBox.id = ("weather-container")
-        weatherBox.classList.add("weather-box");
-           
-        weatherBox.innerHTML = `
-            <h3 id="city-state">Loading...</h3>
-            <span id="state"></span>
-            <div id="temp"></div>
-            <div id="forecast"></div>
-            <div id="date"></div>
-        
-        `
-        const wrapper = document.getElementById("weather-wrapper");
-        wrapper.appendChild(weatherBox);
-
-        const weatherArrow = document.createElement("button");
-        weatherArrow.textContent = ">>";
-        weatherArrow.id = "next_button"
-        const button_wrapper = document.getElementById('button_wrapper');
-        weatherArrow.classList.add("button_wrapper");
-        button_wrapper.appendChild(weatherArrow);
-
-        const leftWeatherArrow = document.createElement("button");
-        leftWeatherArrow.textContent = "<<";
-        leftWeatherArrow.id = "last_button";
-        const left_button_wrapper = document.getElementById("left_button_wrapper");
-        leftWeatherArrow.classList.add("left_button_wrapper");
-        left_button_wrapper.appendChild(leftWeatherArrow);
-
+button.addEventListener("click", getLocation);
+previousButton.addEventListener("click", () => {
+    if (count > 0) {
+        count -= 1;
+        renderForecast();
     }
-
-    document.getElementById('next_button').onclick = function() {
-        console.log("clicked");
-        count ++;
-        longLat();
+});
+nextButton.addEventListener("click", () => {
+    if (globalData && count < globalData.length - 1) {
+        count += 1;
+        renderForecast();
     }
-
-    document.getElementById('last_button').onclick = function() {
-        if (count > 0) {
-            console.log("back clicked");
-            --count; 
-            longLat();
-        }
-    }
-}
-    
-
-};
-
-function updateWeather(weather) {
-    if (weather) {
-        document.getElementById('temp').innerHTML = weather.temperature + "° " + weather.temperatureUnit
-        document.getElementById('forecast').innerHTML = weather.shortForecast 
-        document.getElementById('date').innerHTML = weather.name
-    }
-}
-
+});
 
 function getLocation() {
-    if (navigator.geolocation) {navigator.geolocation.getCurrentPosition(longLat);} 
-    else {
-        console.log("error!")
-    }
-    
-}
-          
-function getElement(id) {
-    return document.getElementById(id);
-} 
-
-async function longLat(position) { 
-
-    if (position) {
-        savedPosition = position;
-    }
-
-    if (globalData != null) {
-        document.getElementById('city-state').innerHTML = globalLocation;
-        updateWeather(globalData[count]);
+    if (!navigator.geolocation) {
+        showError("Location services are not supported by this browser.");
         return;
-        
     }
 
-    const lat = savedPosition.coords.latitude
-    const lon = savedPosition.coords.longitude
-    const url =  `https://api.weather.gov/points/${lat},${lon}`;
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            globalLocation = "Weather in " + data.properties.relativeLocation.properties.city + ", " + data.properties.relativeLocation.properties.state;
-            document.getElementById('city-state').innerHTML = globalLocation;
-            return fetch (data.properties.forecast)
-        })
-        .then(res => res.json())
-        .then(forecastData => {
-            globalData = forecastData.properties.periods;
-            updateWeather(globalData[count])
-        })
-        .catch(error => console.error('Error:', error));
-
-
+    button.disabled = true;
+    button.querySelector("span:nth-child(2)").textContent = "Finding your forecast...";
+    navigator.geolocation.getCurrentPosition(loadForecast, () => {
+        showError("We couldn’t access your location. Please allow location access and try again.");
+    });
 }
 
+async function loadForecast(position) {
+    savedPosition = position;
+    count = 0;
+    setLoadingState();
+
+    try {
+        const { latitude, longitude } = savedPosition.coords;
+        const response = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`);
+        if (!response.ok) throw new Error("Unable to find forecast location");
+        const data = await response.json();
+        const location = data.properties.relativeLocation.properties;
+        globalLocation = `${location.city}, ${location.state}`;
+
+        const forecastResponse = await fetch(data.properties.forecast);
+        if (!forecastResponse.ok) throw new Error("Unable to load forecast");
+        const forecastData = await forecastResponse.json();
+        globalData = forecastData.properties.periods;
+        renderForecast();
+    } catch (error) {
+        showError("We couldn’t load the forecast right now. Please try again.");
+        console.error("Forecast error:", error);
+    } finally {
+        button.disabled = false;
+        button.querySelector("span:nth-child(2)").textContent = "Refresh my forecast";
+    }
+}
+
+function renderForecast() {
+    const weather = globalData[count];
+    weatherWrapper.innerHTML = `
+        <article class="weather-box">
+            <div class="weather-box__topline">
+                <span class="weather-box__location">⌖ ${globalLocation}</span>
+                <span class="weather-box__period">${weather.name}</span>
+            </div>
+            <div class="weather-box__main">
+                <div class="weather-box__icon">${getWeatherIcon(weather.shortForecast)}</div>
+                <div>
+                    <div class="temperature">${weather.temperature}<sup>°${weather.temperatureUnit}</sup></div>
+                    <p class="forecast">${weather.shortForecast}</p>
+                </div>
+            </div>
+            <div class="weather-box__details">
+                <div><span>WIND</span><strong>${weather.windSpeed}</strong><small>${weather.windDirection}</small></div>
+                <div><span>OUTLOOK</span><strong>${weather.detailedForecast}</strong></div>
+            </div>
+        </article>
+    `;
+    previousButton.disabled = count === 0;
+    nextButton.disabled = count === globalData.length - 1;
+}
+
+function setLoadingState() {
+    weatherWrapper.innerHTML = `<div class="empty-state loading-state"><div class="loader"></div><p>Reading the sky...</p><span>Finding your local conditions</span></div>`;
+}
+
+function showError(message) {
+    weatherWrapper.innerHTML = `<div class="empty-state error-state"><div class="empty-state__icon">!</div><p>${message}</p><span>Check your browser permissions and try again.</span></div>`;
+    previousButton.disabled = true;
+    nextButton.disabled = true;
+}
+
+function getWeatherIcon(forecast) {
+    const value = forecast.toLowerCase();
+    if (value.includes("thunder")) return "ϟ";
+    if (value.includes("rain") || value.includes("shower")) return "☂";
+    if (value.includes("snow")) return "❄";
+    if (value.includes("cloud")) return "☁";
+    return "☼";
+}

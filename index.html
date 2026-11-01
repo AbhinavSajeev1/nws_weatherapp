@@ -3,24 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather</title>
+    <meta name="description" content="A simple, beautiful local weather forecast dashboard.">
+    <title>Skycast | Local weather</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="js/main.js"></script>
+    <script src="js/main.js" defer></script>
 </head>
 <body>
-    <ul class="header__toolbar">
-        <li class="toolbar__list"><a href="index.html">Weather</a></li>
-    </ul>
-    <div class="header__button"><button class="button" id="button">What is the weather in my area? </button></div>
-    <div class = big_wrapper id="total_wrapper">
-        <div id="left_button_wrapper"></div>
-        <div id="weather-wrapper"></div>
-        <div id="button_wrapper"></div>
+    <header class="site-header">
+        <a class="brand" href="index.html" aria-label="Skycast home">
+            <span class="brand__mark">✦</span>
+            <span>skycast</span>
+        </a>
+        <span class="header-status"><span class="status-dot"></span> Live local forecast</span>
+    </header>
 
-    </div>
+    <main class="page-shell">
+        <section class="intro" aria-labelledby="page-title">
+            <p class="eyebrow">YOUR LOCAL FORECAST</p>
+            <h1 id="page-title">Know your sky.<br><em>Plan your day.</em></h1>
+            <p class="intro__copy">Get a clear, up-to-date look at the weather around you.</p>
+            <button class="button" id="button">
+                <span class="button__icon">⌖</span>
+                <span>Use my location</span>
+                <span class="button__arrow">→</span>
+            </button>
+            <p class="privacy-note">Your location is only used to find your local forecast.</p>
+        </section>
 
-
-    
+        <section class="weather-section" aria-live="polite">
+            <div class="weather-heading">
+                <div>
+                    <p class="eyebrow">AT A GLANCE</p>
+                    <h2>Today’s conditions</h2>
+                </div>
+                <span class="weather-heading__line"></span>
+            </div>
+            <div class="big_wrapper" id="total_wrapper">
+                <button class="forecast-control" id="last_button" aria-label="Show previous forecast" disabled>←</button>
+                <div id="weather-wrapper">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">☼</div>
+                        <p>Your forecast will appear here</p>
+                        <span>Tap “Use my location” to get started</span>
+                    </div>
+                </div>
+                <button class="forecast-control" id="next_button" aria-label="Show next forecast" disabled>→</button>
+            </div>
+        </section>
+    </main>
+    <footer>Forecast data provided by <a href="https://www.weather.gov/" target="_blank" rel="noreferrer">National Weather Service</a></footer>
 </body>
 </html>
-
