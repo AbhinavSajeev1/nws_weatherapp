@@ -2,9 +2,11 @@ let count = 0;
 let globalData = null;
 let globalLocation = null;
 let savedPosition = null;
+let globalAlerts = [];
 
 const button = document.getElementById("button");
 const weatherWrapper = document.getElementById("weather-wrapper");
+const alertsWrapper = document.getElementById("alerts-wrapper");
 const previousButton = document.getElementById("last_button");
 const nextButton = document.getElementById("next_button");
 
@@ -38,6 +40,7 @@ function getLocation() {
 async function loadForecast(position) {
     savedPosition = position;
     count = 0;
+    globalAlerts = [];
     setLoadingState();
 
     try {
@@ -53,6 +56,17 @@ async function loadForecast(position) {
         const forecastData = await forecastResponse.json();
         globalData = forecastData.properties.periods;
         renderForecast();
+
+        try {
+            const alertsResponse = await fetch(`https://api.weather.gov/alerts/active?point=${latitude},${longitude}`);
+            if (!alertsResponse.ok) throw new Error("Unable to load alerts");
+            const alertsData = await alertsResponse.json();
+            globalAlerts = (alertsData.features || []).filter(isHurricaneAlert);
+            renderAlerts();
+        } catch (error) {
+            renderAlertsError();
+            console.error("Alert error:", error);
+        }
     } catch (error) {
         showError("We couldn’t load the forecast right now. Please try again.");
         console.error("Forecast error:", error);
@@ -88,13 +102,77 @@ function renderForecast() {
 }
 
 function setLoadingState() {
-    weatherWrapper.innerHTML = `<div class="empty-state loading-state"><div class="loader"></div><p>Reading the sky...</p><span>Finding your local conditions</span></div>`;
+    weatherWrapper.innerHTML = `<div class="empty-state loading-state"><div class="loader"></div><p>Loading forecast...</p><span>Finding your location</span></div>`;
+    alertsWrapper.innerHTML = `<div class="empty-state loading-state alert-empty-state"><div class="loader"></div><p>Loading alerts...</p><span>Checking the National Weather Service</span></div>`;
 }
 
 function showError(message) {
     weatherWrapper.innerHTML = `<div class="empty-state error-state"><div class="empty-state__icon">!</div><p>${message}</p><span>Check your browser permissions and try again.</span></div>`;
     previousButton.disabled = true;
     nextButton.disabled = true;
+}
+
+function renderAlerts() {
+    if (!globalAlerts.length) {
+        alertsWrapper.innerHTML = `
+            <div class="alert-card alert-card--clear">
+                <div class="alert-card__icon">✓</div>
+                <div>
+                    <strong>No active hurricane alerts</strong>
+                    <p>The National Weather Service has no hurricane or tropical alerts for this location.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    alertsWrapper.innerHTML = globalAlerts.map(({ properties: alert }) => `
+        <article class="alert-card alert-card--${getAlertSeverity(alert.severity)}">
+            <div class="alert-card__icon">!</div>
+            <div class="alert-card__content">
+                <div class="alert-card__topline">
+                    <strong>${escapeHtml(alert.event)}</strong>
+                    <span>${escapeHtml(alert.severity || "Alert")}</span>
+                </div>
+                <p class="alert-card__headline">${escapeHtml(alert.headline || "Active NWS alert")}</p>
+                <p>${escapeHtml(alert.description || "Follow instructions from local officials.")}</p>
+                ${alert.ends ? `<small>Ends ${formatDate(alert.ends)}</small>` : ""}
+            </div>
+        </article>
+    `).join("");
+}
+
+function renderAlertsError() {
+    alertsWrapper.innerHTML = `
+        <div class="empty-state error-state alert-empty-state">
+            <div class="empty-state__icon">!</div>
+            <p>Alerts are unavailable</p>
+            <span>Try again in a moment.</span>
+        </div>
+    `;
+}
+
+function isHurricaneAlert(feature) {
+    const event = feature.properties.event.toLowerCase();
+    return ["hurricane", "tropical storm", "tropical depression", "storm surge", "tropical cyclone"].some((term) => event.includes(term));
+}
+
+function getAlertSeverity(severity) {
+    return ["extreme", "severe"].includes((severity || "").toLowerCase()) ? "danger" : "watch";
+}
+
+function formatDate(value) {
+    return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+}
+
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }[character]));
 }
 
 function getWeatherIcon(forecast) {

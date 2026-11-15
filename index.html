@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A simple, beautiful local weather forecast dashboard.">
+    <meta name="description" content="Simple local weather and hurricane alerts from the National Weather Service.">
     <title>Skycast | Local weather</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/main.js" defer></script>
@@ -19,9 +19,9 @@
 
     <main class="page-shell">
         <section class="intro" aria-labelledby="page-title">
-            <p class="eyebrow">YOUR LOCAL FORECAST</p>
-            <h1 id="page-title">Know your sky.<br><em>Plan your day.</em></h1>
-            <p class="intro__copy">Get a clear, up-to-date look at the weather around you.</p>
+            <p class="eyebrow">LOCAL WEATHER</p>
+            <h1 id="page-title">Your weather.<br><em>Simple.</em></h1>
+            <p class="intro__copy">See the current forecast and active hurricane alerts for your location.</p>
             <button class="button" id="button">
                 <span class="button__icon">⌖</span>
                 <span>Use my location</span>
@@ -43,14 +43,31 @@
                 <div id="weather-wrapper">
                     <div class="empty-state">
                         <div class="empty-state__icon">☼</div>
-                        <p>Your forecast will appear here</p>
-                        <span>Tap “Use my location” to get started</span>
+                        <p>No forecast yet</p>
+                        <span>Use your location to get started</span>
                     </div>
                 </div>
                 <button class="forecast-control" id="next_button" aria-label="Show next forecast" disabled>→</button>
             </div>
         </section>
+
+        <section class="alerts-section" aria-live="polite" aria-labelledby="alerts-title">
+            <div class="weather-heading">
+                <div>
+                    <p class="eyebrow">NATIONAL WEATHER SERVICE</p>
+                    <h2 id="alerts-title">Hurricane alerts</h2>
+                </div>
+                <span class="weather-heading__line"></span>
+            </div>
+            <div id="alerts-wrapper">
+                <div class="empty-state alert-empty-state">
+                    <div class="empty-state__icon">!</div>
+                    <p>No alerts loaded</p>
+                    <span>Use your location to check for active hurricane alerts</span>
+                </div>
+            </div>
+        </section>
     </main>
-    <footer>Forecast data provided by <a href="https://www.weather.gov/" target="_blank" rel="noreferrer">National Weather Service</a></footer>
+    <footer>Forecast and alert data provided by <a href="https://www.weather.gov/" target="_blank" rel="noreferrer">National Weather Service</a></footer>
 </body>
 </html>
